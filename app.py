@@ -1,52 +1,111 @@
-import numpy as np
-import pandas as pd
-import streamlit as st
-from pandas_profiling import ProfileReport
-from streamlit_pandas_profiling import st_profile_report
+# Core Pkgs
+import streamlit as st 
 
-# Web App Title
-# st.markdown('''
-# # **The EDA App**
-# This is the **EDA App** created in Streamlit using the **pandas-profiling** library.
-# **Credit:** App built in `Python` + `Streamlit` by [Chanin Nantasenamat](https://medium.com/@chanin.nantasenamat) (aka [Data Professor](http://youtube.com/dataprofessor))
-# ---
-# ''')
+# EDA Pkgs
+import pandas as pd 
+import numpy as np 
 
-# Upload CSV data
-# with st.sidebar.header('1. Upload your CSV data'):
-uploaded_file = "./StudentInfo.csv" #st.sidebar.file_uploader("Upload your input CSV file", type=["csv"])
-#     st.sidebar.markdown("""
-# [Example CSV input file](https://raw.githubusercontent.com/dataprofessor/data/master/delaney_solubility_with_descriptors.csv)
-# """)
 
-# Pandas Profiling Report
-if uploaded_file is not None:
-    @st.cache
-    def load_csv():
-        csv = pd.read_csv(uploaded_file)
-        return csv
-    df = load_csv()
-    pr = ProfileReport(df, explorative=True)
-    st.header('**Input DataFrame**')
-    st.write(df)
-    st.write('---')
-    st.header('**Pandas Profiling Report**')
-    st_profile_report(pr)
-# else:
-#     st.info('Awaiting for CSV file to be uploaded.')
-#     if st.button('Press to use Example Dataset'):
-#         # Example data
-#         @st.cache
-#         def load_data():
-#             a = pd.DataFrame(
-#                 np.random.rand(100, 5),
-#                 columns=['a', 'b', 'c', 'd', 'e']
-#             )
-#             return a
-#         df = load_data()
-#         pr = ProfileReport(df, explorative=True)
-#         st.header('**Input DataFrame**')
-#         st.write(df)
-#         st.write('---')
-#         st.header('**Pandas Profiling Report**')
-#         st_profile_report(pr)
+# Data Viz Pkg
+import matplotlib.pyplot as plt 
+import matplotlib
+matplotlib.use("Agg")
+import seaborn as sns 
+
+
+
+def main():
+	"""Semi Automated ML App with Streamlit """
+
+	activities = ["EDA","Plots"]	
+	choice = st.sidebar.selectbox("Select Activities",activities)
+
+	if choice == 'EDA':
+		st.subheader("Exploratory Data Analysis")
+
+		data = "./StudentInfo.csv"
+		if data is not None:
+			df = pd.read_csv(data)
+			st.dataframe(df.head())
+			
+
+			if st.checkbox("Show Shape"):
+				st.write(df.shape)
+
+			if st.checkbox("Show Columns"):
+				all_columns = df.columns.to_list()
+				st.write(all_columns)
+
+			if st.checkbox("Summary"):
+				st.write(df.describe())
+
+			if st.checkbox("Show Selected Columns"):
+				selected_columns = st.multiselect("Select Columns",all_columns)
+				new_df = df[selected_columns]
+				st.dataframe(new_df)
+
+			if st.checkbox("Show Value Counts"):
+				st.write(df.iloc[:,-1].value_counts())
+
+			if st.checkbox("Correlation Plot(Matplotlib)"):
+				plt.matshow(df.corr())
+				st.pyplot()
+
+			if st.checkbox("Correlation Plot(Seaborn)"):
+				st.write(sns.heatmap(df.corr(),annot=True))
+				st.pyplot()
+
+
+			if st.checkbox("Pie Plot"):
+				all_columns = df.columns.to_list()
+				column_to_plot = st.selectbox("Select 1 Column",all_columns)
+				pie_plot = df[column_to_plot].value_counts().plot.pie(autopct="%1.1f%%")
+				st.write(pie_plot)
+				st.pyplot()
+
+
+
+	elif choice == 'Plots':
+		st.subheader("Data Visualization")
+		data = "./StudentInfo.csv"
+		if data is not None:
+			df = pd.read_csv(data)
+			st.dataframe(df.head())
+
+
+			if st.checkbox("Show Value Counts"):
+				st.write(df.iloc[:,-1].value_counts().plot(kind='bar'))
+				st.pyplot()
+		
+			# Customizable Plot
+
+			all_columns_names = df.columns.tolist()
+			type_of_plot = st.selectbox("Select Type of Plot",["area","bar","line","hist","box","kde"])
+			selected_columns_names = st.multiselect("Select Columns To Plot",all_columns_names)
+
+			if st.button("Generate Plot"):
+				st.success("Generating Customizable Plot of {} for {}".format(type_of_plot,selected_columns_names))
+
+				# Plot By Streamlit
+				if type_of_plot == 'area':
+					cust_data = df[selected_columns_names]
+					st.area_chart(cust_data)
+
+				elif type_of_plot == 'bar':
+					cust_data = df[selected_columns_names]
+					st.bar_chart(cust_data)
+
+				elif type_of_plot == 'line':
+					cust_data = df[selected_columns_names]
+					st.line_chart(cust_data)
+
+				# Custom Plot 
+				elif type_of_plot:
+					cust_plot= df[selected_columns_names].plot(kind=type_of_plot)
+					st.write(cust_plot)
+					st.pyplot()
+    
+
+
+if __name__ == '__main__':
+	main()
